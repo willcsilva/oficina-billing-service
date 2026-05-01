@@ -68,13 +68,6 @@ spec:
                   name: oficina-db-config
                   key: APP_BASE_URL
 
-            # Segredo do JWT para validar os tokens da Lambda
-            - name: JWT_SECRET_ENV
-              valueFrom:
-                secretKeyRef:
-                  name: oficina-auth-secret
-                  key: JWT_SECRET_ENV
-
             # 2. O laço que puxa a lista do values.yaml
             {{- if .Values.env }}
             {{- toYaml .Values.env | nindent 12 }}
