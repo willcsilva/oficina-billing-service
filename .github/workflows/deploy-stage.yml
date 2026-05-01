@@ -11,6 +11,10 @@ env:
   IMAGE_NAME: oficina-billing-service
   NAMESPACE: oficina-sistema-stage
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
