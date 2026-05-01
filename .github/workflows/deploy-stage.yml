@@ -1,0 +1,63 @@
+name: Deploy Billing Service to Local K8s (Stage)
+
+on:
+  push:
+    branches:
+      - main
+
+# Define as variáveis de ambiente base
+env:
+  IMAGE_NAME: oficina-billing-service
+  NAMESPACE: oficina-sistema-stage
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Test with Maven
+        run: mvn clean package -B
+
+      # Como a pipeline roda na nuvem e o seu cluster é local no Mac,
+      # não podemos fazer um deploy direto com o 'kubectl apply' daqui.
+      # A pipeline atua como CI: compila e publica a imagem no GHCR.
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Publica a imagem no formato: ghcr.io/seu-usuario/oficina-billing-service:sha
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      # Exibe as instruções para o deploy manual no seu Mac
+      - name: Manual Deploy Instructions (Local Cluster)
+        run: |
+          echo "================================================================"
+          echo "🚀 Imagem Docker gerada e publicada com sucesso no GHCR!"
+          echo ""
+          echo "Para fazer o deploy no seu cluster local (Mac), rode os comandos:"
+          echo "1. Substitua o DOCKER_IMAGE_NAME no arquivo k8s/billing-service-deployment.yaml:"
+          echo "   image: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "2. Aplique os manifestos no seu terminal:"
+          echo "   kubectl apply -f k8s/billing-service-deployment.yaml"
+          echo "================================================================"
