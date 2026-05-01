@@ -51,7 +51,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 🚀 Forma mais segura de configurar o Kubernetes
       - name: Set Kubernetes Context
         uses: azure/k8s-set-context@v3
         with:
@@ -73,6 +72,9 @@ jobs:
               value: "http://localstack-service:4566"
             - name: STRIPE_API_KEY
               value: "${{ secrets.STRIPE_API_KEY }}"
+          serviceAccount:
+            create: false
+            name: "billing-service-sa" # Força o uso do SA que já tem o Token
           EOF
 
           helm upgrade --install billing-service ./chart-billing \

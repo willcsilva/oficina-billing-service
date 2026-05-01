@@ -6,7 +6,7 @@ image:
   pullPolicy: Always
   tag: "latest"
 
-namespace: oficina-sistema
+namespace: oficina-sistema-stage
 
 # Dados Dinâmicos: Serão preenchidos pelo GitHub Actions via --set
 aws:
