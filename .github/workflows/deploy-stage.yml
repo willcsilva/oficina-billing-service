@@ -18,7 +18,7 @@ permissions:
 jobs:
   build-and-push:
     # Como você já resolveu o deploy local, mantemos o padrão do seu ambiente
-    runs-on: self-hosted 
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ github.sha }}
     
@@ -53,7 +53,7 @@ jobs:
 
   deploy-stage:
     needs: build-and-push
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
