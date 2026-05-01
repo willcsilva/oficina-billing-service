@@ -48,10 +48,6 @@ spec:
                   key: password
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: "update"
-
-            # 1. Variável de controle de ambiente
-            - name: SPRING_PROFILES_ACTIVE
-              value: {{ .Values.springProfile | default "prod" | quote }}
               
             # =========================================================
             # VARIÁVEIS INJETADAS VIA HELM PARA A SAGA COREOGRAFADA
