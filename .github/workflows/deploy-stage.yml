@@ -73,7 +73,7 @@ jobs:
             - name: STRIPE_API_KEY
               value: "${{ secrets.STRIPE_API_KEY }}"
           serviceAccount:
-            create: false
+            create: true
             name: "billing-service-sa" # Força o uso do SA que já tem o Token
           EOF
 
