@@ -51,10 +51,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_ON_PREMISE }}" > ~/.kube/config
+      # 🚀 Forma mais segura de configurar o Kubernetes
+      - name: Set Kubernetes Context
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG_ON_PREMISE }}
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
