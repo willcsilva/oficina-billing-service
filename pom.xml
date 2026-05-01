@@ -38,11 +38,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- AWS SQS -->
         <dependency>
             <groupId>io.awspring.cloud</groupId>
             <artifactId>spring-cloud-aws-starter-sqs</artifactId>
         </dependency>
 
+        <!-- AWS DynamoDB -->
         <dependency>
             <groupId>io.awspring.cloud</groupId>
             <artifactId>spring-cloud-aws-starter-dynamodb</artifactId>
@@ -53,10 +55,11 @@
             <artifactId>sts</artifactId>
         </dependency>
 
+        <!-- Stripe (Substituindo o Mercado Pago) -->
         <dependency>
-            <groupId>com.mercadopago</groupId>
-            <artifactId>sdk-java</artifactId>
-            <version>2.1.27</version>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>24.22.0</version>
         </dependency>
 
         <dependency>

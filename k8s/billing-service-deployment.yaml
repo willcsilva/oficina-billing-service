@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service
+  namespace: oficina-sistema-stage
+  labels:
+    app: billing-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-service
+  template:
+    metadata:
+      labels:
+        app: billing-service
+    spec:
+      containers:
+        - name: billing-service
+          # Na pipeline, a tag será substituída dinamicamente (ex: ${GITHUB_SHA})
+          image: DOCKER_IMAGE_NAME
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            # O truque aqui: em vez de localhost, a aplicação usa o DNS do K8s 
+            # para achar o LocalStack de forma nativa!
+            - name: SPRING_CLOUD_AWS_ENDPOINT
+              value: "http://localstack-service.oficina-sistema-stage.svc.cluster.local:4566"
+            - name: STRIPE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secrets
+                  key: apiKey
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-service
+  namespace: oficina-sistema-stage
+spec:
+  selector:
+    app: billing-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
