@@ -17,7 +17,7 @@ spec:
             pathType: {{ .Values.ingress.pathType }}
             backend:
               service:
-                name: oficina-service
+                name: billing-service
                 port:
                   number: {{ .Values.service.port }}
 {{- end }}

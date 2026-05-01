@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: oficina-service
+  name: billing-service
   namespace: {{ .Values.namespace }}
 spec:
   type: {{ .Values.service.type }}
