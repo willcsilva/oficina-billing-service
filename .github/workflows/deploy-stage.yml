@@ -106,3 +106,4 @@ jobs:
 
           echo "Aguardando estabilização do pod de Billing (Timeout 300s)..."
           kubectl rollout status deployment/billing-service -n ${{ env.NAMESPACE }} --timeout=300s
+          
