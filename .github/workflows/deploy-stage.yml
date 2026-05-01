@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - stage
 
 # Define as variáveis de ambiente base
 env:
