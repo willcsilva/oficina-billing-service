@@ -24,7 +24,7 @@ db:
   password: ""
 
 serviceAccount:
-  name: oficina-api-sa
+  name: billing-service-sa
   # A anotação agora buscará o valor da variável aws.role_arn no template
   annotations: {}
 
