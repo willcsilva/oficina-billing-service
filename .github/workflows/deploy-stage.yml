@@ -81,8 +81,10 @@ jobs:
             --namespace ${{ env.NAMESPACE }} \
             --create-namespace \
             -f stage-billing-overrides.yaml \
+            --set serviceAccount.create=false \
+            --set serviceAccount.name=billing-service-sa \
             --set image.repository=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }} \
             --set image.tag=$VERSION \
+            # No bloco do helm upgrade --install
             --history-max 3
-
           kubectl rollout status deployment/billing-service -n ${{ env.NAMESPACE }} --timeout=300s
