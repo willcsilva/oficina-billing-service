@@ -3,7 +3,6 @@ name: Deploy Billing Service to Docker Hub (Stage)
 on:
   push:
     branches:
-      - main
       - stage
 
 env:
@@ -11,17 +10,11 @@ env:
   IMAGE_NAME: oficina-billing-service
   NAMESPACE: oficina-sistema-stage
 
-permissions:
-  contents: read
-  packages: write
-  
 jobs:
   build-and-push:
-    # Como você já resolveu o deploy local, mantemos o padrão do seu ambiente
     runs-on: ubuntu-latest
     outputs:
       version: ${{ github.sha }}
-    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -42,7 +35,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push to Docker Hub
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -51,25 +44,18 @@ jobs:
             ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-  # ----------------------------------------------------
-  # DEPLOY NO ON-PREMISE (STAGE / LOCALSTACK)
-  # ----------------------------------------------------
   deploy-stage:
-    name: "Deploy to On-Premise via Helm"
     needs: build-and-push
-    if: github.ref == 'refs/heads/stage'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # PASSO ESSENCIAL 1: Configura o acesso ao seu Kubernetes local
       - name: Setup Kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG_ON_PREMISE }}" > ~/.kube/config
 
-      # PASSO ESSENCIAL 2: Instala o Helm no Runner do GitHub
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
@@ -77,33 +63,22 @@ jobs:
         run: |
           VERSION="${{ needs.build-and-push.outputs.version }}"
           
-          # Criando os overrides específicos para o Billing
           cat <<EOF > stage-billing-overrides.yaml
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "dev"
             - name: SPRING_CLOUD_AWS_ENDPOINT
               value: "http://localstack-service:4566"
-            - name: SPRING_CLOUD_AWS_REGION_STATIC
-              value: "us-east-1"
-            - name: SPRING_CLOUD_AWS_CREDENTIALS_ACCESS_KEY
-              value: "test"
-            - name: SPRING_CLOUD_AWS_CREDENTIALS_SECRET_KEY
-              value: "test"
             - name: STRIPE_API_KEY
               value: "${{ secrets.STRIPE_API_KEY }}"
           EOF
 
-          # Executando o upgrade via Helm (Padrão SRE)
           helm upgrade --install billing-service ./chart-billing \
             --namespace ${{ env.NAMESPACE }} \
             --create-namespace \
             -f stage-billing-overrides.yaml \
-            --set replicaCount=1 \
             --set image.repository=${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }} \
             --set image.tag=$VERSION \
             --history-max 3
 
-          echo "Aguardando estabilização do pod de Billing (Timeout 300s)..."
           kubectl rollout status deployment/billing-service -n ${{ env.NAMESPACE }} --timeout=300s
-          
