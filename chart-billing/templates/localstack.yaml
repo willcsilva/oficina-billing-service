@@ -1,0 +1,63 @@
+{{- if .Values.localstack.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: localstack-init-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+  init-sns.sh: |
+    #!/bin/bash
+    echo "A iniciar a criação da infraestrutura mockada no LocalStack..."
+    
+    # Criar o tópico SNS
+    awslocal sns create-topic --name oficina-notificacoes --region us-east-2
+    
+    echo "Tópico SNS 'oficina-notificacoes' criado com sucesso!"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack
+          image: localstack/localstack:2.2.0
+          ports:
+            - containerPort: 4566
+          env:
+            - name: SERVICES
+              value: "sns,lambda,apigateway"
+            - name: DEFAULT_REGION
+              value: "us-east-2"
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /etc/localstack/init/ready.d/
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: localstack-init-scripts
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: localstack
+  ports:
+    - protocol: TCP
+      port: 4566
+      targetPort: 4566
+{{- end }}

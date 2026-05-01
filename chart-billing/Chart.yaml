@@ -1,0 +1,7 @@
+apiVersion: v2
+name: oficina-api
+description: Helm chart para a API da Oficina
+type: application
+version: 1.0.0
+appVersion: 1.10.1
+

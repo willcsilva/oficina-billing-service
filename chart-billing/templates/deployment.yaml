@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        instrumentation.newrelic.com/injection: "{{ .Release.Name }}-instrumentation"
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      # Utiliza o ServiceAccount vinculado à Role IAM do SNS e SQS
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+
+          env:
+            # Conexão com Banco de Dados (Via ConfigMap oficina-db-config)
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oficina-db-config
+                  key: DB_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-db-secrets
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-db-secrets
+                  key: password
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+
+            # 1. Variável de controle de ambiente
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.springProfile | default "prod" | quote }}
+              
+            # =========================================================
+            # VARIÁVEIS INJETADAS VIA HELM PARA A SAGA COREOGRAFADA
+            # =========================================================
+            - name: AWS_SNS_TOPIC_NOTIFICACOES_ARN
+              value: {{ .Values.aws.snsNotificacoesArn | quote }}
+            - name: AWS_SNS_OS_CRIADA_ARN
+              value: {{ .Values.aws.snsOsCriadaArn | quote }}
+
+            # LB (Via ConfigMap oficina-db-config)
+            - name: APP_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: oficina-db-config
+                  key: APP_BASE_URL
+
+            # Segredo do JWT para validar os tokens da Lambda
+            - name: JWT_SECRET_ENV
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-auth-secret
+                  key: JWT_SECRET_ENV
+
+            # 2. O laço que puxa a lista do values.yaml
+            {{- if .Values.env }}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}

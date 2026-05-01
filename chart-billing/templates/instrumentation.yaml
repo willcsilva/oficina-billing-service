@@ -1,0 +1,21 @@
+apiVersion: newrelic.com/v1beta2
+kind: Instrumentation
+metadata:
+  # Usando o nome do Release diretamente para evitar erro de template
+  name: {{ .Release.Name }}-instrumentation
+  namespace: newrelic
+spec:
+  agent:
+    language: java
+    image: newrelic/newrelic-java-init:latest
+    env:
+      - name: NEW_RELIC_APP_NAME
+        value: "{{ .Release.Name }}-{{ .Values.springProfile | default "prod" }}"
+  
+  # Aplica a instrumentação no namespace do deploy
+  namespaceLabelSelector:
+    matchExpressions:
+      - key: "kubernetes.io/metadata.name"
+        operator: "In"
+        values: 
+          - {{ .Values.namespace | default "oficina-sistema" }}

@@ -1,0 +1,83 @@
+# Caminho: values.yaml
+replicaCount: 2
+
+image:
+  repository: willcsilva/oficina-api
+  pullPolicy: Always
+  tag: "latest"
+
+namespace: oficina-sistema
+
+# Dados Dinâmicos: Serão preenchidos pelo GitHub Actions via --set
+aws:
+  clusterName: "" 
+  sns_arn: ""     
+  role_arn: ""    # Injetar o ARN da Role IRSA aqui (Apenas Produção)
+  region: "us-east-2"
+  username: ""
+  password: ""
+  endpoint: ""    # Vazio em Produção. Em Stage injetar: http://localstack-service:4566
+
+db:
+  endpoint: ""    # Injetar o endpoint do RDS aqui (ou postgres-service em Stage)
+  username: ""
+  password: ""
+
+serviceAccount:
+  name: oficina-api-sa
+  # A anotação agora buscará o valor da variável aws.role_arn no template
+  annotations: {}
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8080
+
+livenessProbe:
+  httpGet:
+    path: /swagger-ui/index.html
+    port: 8080
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /swagger-ui/index.html
+    port: 8080
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  failureThreshold: 3
+
+ingress:
+  enabled: true
+  name: oficina-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/load-balancer-name: oficina-alb
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: '200-499'
+  path: /
+  pathType: Prefix
+
+env:
+  - name: SERVER_FORWARD_HEADERS_STRATEGY
+    value: "native"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info"
+  - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+    value: "true"
+  - name: AWS_REGION
+    value: "us-east-2"
+auth:
+  jwtSecret: ""
+
+# Configuração condicional do LocalStack para ambientes On-Premise (Stage)
+localstack:
+  enabled: false
+
+springProfile: "prod"
+
+app:
+  baseUrl: ""

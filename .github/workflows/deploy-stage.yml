@@ -51,18 +51,33 @@ jobs:
             ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
+  # ----------------------------------------------------
+  # DEPLOY NO ON-PREMISE (STAGE / LOCALSTACK)
+  # ----------------------------------------------------
   deploy-stage:
+    name: "Deploy to On-Premise via Helm"
     needs: build-and-push
+    if: github.ref == 'refs/heads/stage'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # PASSO ESSENCIAL 1: Configura o acesso ao seu Kubernetes local
+      - name: Setup Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_ON_PREMISE }}" > ~/.kube/config
+
+      # PASSO ESSENCIAL 2: Instala o Helm no Runner do GitHub
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
       - name: Deploy Billing with Helm (Stage)
         run: |
           VERSION="${{ needs.build-and-push.outputs.version }}"
           
-          # Criando os overrides específicos para o contexto de faturamento e LocalStack
+          # Criando os overrides específicos para o Billing
           cat <<EOF > stage-billing-overrides.yaml
           env:
             - name: SPRING_PROFILES_ACTIVE
@@ -79,7 +94,7 @@ jobs:
               value: "${{ secrets.STRIPE_API_KEY }}"
           EOF
 
-          # Executando o upgrade via Helm seguindo o padrão da oficina-api
+          # Executando o upgrade via Helm (Padrão SRE)
           helm upgrade --install billing-service ./chart-billing \
             --namespace ${{ env.NAMESPACE }} \
             --create-namespace \

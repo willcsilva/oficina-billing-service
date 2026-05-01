@@ -1,0 +1,13 @@
+# Caminho: templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-db-config
+  namespace: {{ .Values.namespace }}
+data:
+  # Montagem dinâmica da String de Conexão
+  #DB_URL: "jdbc:postgresql://{{ .Values.db.endpoint }}:5432/db_oficina?ssl=true&sslmode=require"
+  DB_URL: {{ if eq .Values.springProfile "dev" }}"jdbc:postgresql://postgres-service:5432/oficinadb"{{ else }}{{ .Values.db.endpoint | quote }}{{ end }}
+  AWS_SNS_TOPIC_ARN: {{ .Values.aws.sns_arn | quote }}
+  APP_BASE_URL: {{ .Values.app.baseUrl | quote }}
+  BASE_URL: {{ .Values.app.baseUrl | default "http://localhost:8080" | quote }}
