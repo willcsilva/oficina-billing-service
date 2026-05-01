@@ -18,8 +18,8 @@ spec:
       containers:
         - name: billing-service
           # Na pipeline, a tag será substituída dinamicamente (ex: ${GITHUB_SHA})
-          image: DOCKER_IMAGE_NAME
-          imagePullPolicy: IfNotPresent
+          image: willcsilva/oficina-billing-service:latest 
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
