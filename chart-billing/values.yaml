@@ -35,17 +35,17 @@ service:
 
 livenessProbe:
   httpGet:
-    path: /swagger-ui/index.html
+    path: /actuator/health
     port: 8080
-  initialDelaySeconds: 120
+  initialDelaySeconds: 60
   periodSeconds: 10
   failureThreshold: 3
 
 readinessProbe:
   httpGet:
-    path: /swagger-ui/index.html
+    path: /actuator/health
     port: 8080
-  initialDelaySeconds: 120
+  initialDelaySeconds: 60
   periodSeconds: 10
   failureThreshold: 3
 
