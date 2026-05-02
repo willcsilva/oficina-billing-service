@@ -67,11 +67,11 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-    </dependencies>
+        </dependencies>
             <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
+        </dependency>
 
     <build>
         <plugins>
