@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service
+  namespace: oficina-sistema-stage
+  labels:
+    app: billing-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-service
+  template:
+    metadata:
+      labels:
+        app: billing-service
+      annotations:
+        instrumentation.newrelic.com/injection: "billing-service-instrumentation"
+    spec:
+      serviceAccountName: billing-service-sa
+      containers:
+        - name: api
+          image: willcsilva/oficina-billing-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: oficina-db-secrets
+            - configMapRef:
+                name: oficina-db-config
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_CLOUD_AWS_ENDPOINT
+              value: "http://localstack-service:4566"
+            - name: AWS_REGION
+              value: "us-east-2"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-2"
+            # Injeção segura via Kubernetes Secret
+            - name: STRIPE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secret
+                  key: api-key
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10

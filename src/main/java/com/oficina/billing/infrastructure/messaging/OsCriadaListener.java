@@ -7,8 +7,10 @@ import com.oficina.billing.infrastructure.database.BillingRepository;
 import com.oficina.billing.infrastructure.payment.StripeService;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OsCriadaListener {
@@ -17,21 +19,22 @@ public class OsCriadaListener {
     private final StripeService stripeService;
     private final BillingRepository billingRepository;
 
-    @SqsListener("billing-os-criada-queue")
+    // Fila alinhada com a infraestrutura IaC do LocalStack
+    @SqsListener("oficina-os-queue")
     public void processarNovaOs(String payloadJson) {
-        System.out.println("==================================================");
-        System.out.println("💰 SAGA (STAGE): Nova OS recebida da fila LocalStack!");
+        log.info("==================================================");
+        log.info("💰 SAGA (STAGE): Nova OS recebida da fila LocalStack!");
         
         try {
             // 1. Extrair os dados da mensagem
             OsCriadaMessage mensagem = objectMapper.readValue(payloadJson, OsCriadaMessage.class);
-            System.out.println("Processando OS #" + mensagem.getOsId() + " para " + mensagem.getClienteNome());
+            log.info("Processando faturamento da OS #{} para o cliente: {}", mensagem.getOsId(), mensagem.getClienteNome());
 
             // 2. Gerar link de pagamento na Stripe (Sandbox)
             String linkPagamento = stripeService.gerarLinkPagamento(mensagem);
             
             if (linkPagamento != null) {
-                System.out.println("✅ Link Stripe gerado com sucesso: " + linkPagamento);
+                log.info("✅ Link Stripe gerado com sucesso: {}", linkPagamento);
                 
                 // 3. Salvar o registro no DynamoDB do LocalStack
                 BillingEntity entity = new BillingEntity(
@@ -44,11 +47,12 @@ public class OsCriadaListener {
                 );
                 
                 billingRepository.salvar(entity);
+                log.info("💾 Fatura da OS #{} salva com sucesso no banco de dados.", mensagem.getOsId());
             }
 
         } catch (Exception e) {
-            System.err.println("Erro ao processar a Saga no ambiente Dev: " + e.getMessage());
+            log.error("❌ Erro ao processar a Saga no ambiente Stage: {}", e.getMessage(), e);
         }
-        System.out.println("==================================================");
+        log.info("==================================================");
     }
 }
