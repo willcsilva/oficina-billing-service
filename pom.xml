@@ -74,7 +74,7 @@
             <version>24.22.0</version>
         </dependency>
         
-        <!-- Dependência do Actuator para o Healthcheck do K8s -->
+        <!--- Dependência do Actuator para o Healthcheck do K8s -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
